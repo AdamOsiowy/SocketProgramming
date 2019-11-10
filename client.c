@@ -6,7 +6,7 @@
 #include <arpa/inet.h>
 #include <netdb.h> 
 
-
+//nanananannananannndasndbuajn
 char buf[512];
 
 int main(int argc, char **argv)
