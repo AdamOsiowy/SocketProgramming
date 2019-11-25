@@ -1,118 +1,86 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
+#include <sys/types.h>
 #include <sys/socket.h>
+#include <stdio.h>
 #include <netinet/in.h>
+#include <string.h>
 #include <arpa/inet.h>
-#include <sys/select.h>
+#include <unistd.h>
 
-void DrukujNadawce(struct sockaddr_in *adres)
+#define BUFF_SIZE 1024
+
+int main(void)
 {
-  printf("Wiadomosc od %s:%d",
-    inet_ntoa(adres->sin_addr),
-    ntohs(adres->sin_port)
-    );  
-}
+    unsigned int port;
+    char bufor[BUFF_SIZE];
+    int rozmiar_pliku;
+    char nazwa_pliku[BUFF_SIZE];
 
-void ObsluzTCP(int gniazdo, struct sockaddr_in *adres)
-{
-  int nowe_gniazdo;
-  char bufor[1024];
-  socklen_t dladr = sizeof(struct sockaddr_in);
-  nowe_gniazdo = 
-    accept(gniazdo, (struct sockaddr*) adres, 
-      &dladr);
-  if (nowe_gniazdo < 0)
-  {
-    printf("Bledne polaczenie (accept < 0)\n");
-    return;
-  }
-  memset(bufor, 0, 1024);
-  while (recv(nowe_gniazdo, bufor, 1024, 0) <= 0);
-  DrukujNadawce(adres);
-  printf("[TCP]: %s\n", bufor);
-  close(nowe_gniazdo);
-}
+    //char sciezka_do_pliku[BUFF_SIZE];
 
-void ObsluzUDP(int gniazdo, struct sockaddr_in *adres)
-{
-  char bufor[1024];
-  socklen_t dladr = sizeof(struct sockaddr_in);
-  memset(bufor, 0, 1024);
-  recvfrom(gniazdo, bufor, 1024, 0, (struct sockaddr*) adres,
-    &dladr);
-  DrukujNadawce(adres);
-  printf("[UDP]: %s\n", bufor);
-}
+    int gniazdo, gniazdo2,odebrane;
+    struct sockaddr_in adr, nadawca;
+    socklen_t dl = sizeof(struct sockaddr_in);
 
-void ObsluzObaProtokoly(int gniazdoTCP, int gniazdoUDP,
-                        struct sockaddr_in *adres)
-{
-  fd_set readfds;
-  struct timeval timeout;
-  unsigned long proba;
-  int maxgniazdo;
-  
-  maxgniazdo = (gniazdoTCP > gniazdoUDP ?
-    gniazdoTCP+1 : gniazdoUDP+1);
-  proba = 0;
-
-  while(1)
-  {
-    FD_ZERO(&readfds);
-    FD_SET(gniazdoTCP, &readfds);
-    FD_SET(gniazdoUDP, &readfds);
-    timeout.tv_sec = 1;
-    timeout.tv_usec = 0;
-    if (select(maxgniazdo, &readfds, NULL, NULL, &timeout) > 0)
+    printf("Na ktorym porcie mam sluchac? : ");
+    scanf("%u", &port);
+    gniazdo = socket(PF_INET, SOCK_STREAM, 0);
+    adr.sin_family = AF_INET;
+    adr.sin_port = htons(port);
+    adr.sin_addr.s_addr = INADDR_ANY;
+    if (bind(gniazdo, (struct sockaddr *)&adr,
+             sizeof(adr)) < 0)
     {
-      proba = 0;
-      if (FD_ISSET(gniazdoTCP, &readfds))
-        ObsluzTCP(gniazdoTCP, adres);
-      if (FD_ISSET(gniazdoUDP, &readfds))
-        ObsluzUDP(gniazdoUDP, adres);
+        printf("Bind nie powiodl sie.\n");
+        return 1;
     }
-    else
+    if (listen(gniazdo, 10) < 0)
     {
-      proba++;
-      printf("Czekam %lu sekund i nic ...\n", proba);
+        printf("Listen nie powiodl sie.\n");
+        return 1;
     }
-  }
-}
+    int liczba_bajtow;
 
-int server(void)
-{
-  struct sockaddr_in bind_me_here;
-  int gt, gu, port;
-  
-  printf("Numer portu: ");
-  scanf("%d", &port);
-  
-  gt = socket(PF_INET, SOCK_STREAM, 0);
-  gu = socket(PF_INET, SOCK_DGRAM, 0);
-  
-  bind_me_here.sin_family = AF_INET;
-  bind_me_here.sin_port = htons(port);
-  bind_me_here.sin_addr.s_addr = INADDR_ANY;
-  
-  if (bind(gt,(struct sockaddr*) &bind_me_here,
-           sizeof(struct sockaddr_in)) < 0)
-  {
-    printf("Bind na TCP nie powiodl sie.\n");
-    return 1;
-  }
+    printf("Czekam na polaczenie ...\n");
+    if ((gniazdo2 = accept(gniazdo,(struct sockaddr *)&nadawca,&dl)) > 0){
+        memset(bufor, 0, BUFF_SIZE);
+        
+        liczba_bajtow=recv(gniazdo2, bufor, BUFF_SIZE, 0);
+        printf("Wiadomosc: %s\n",bufor);
+        printf("Bajty: %d\n",liczba_bajtow);
 
-  if (bind(gu,(struct sockaddr*) &bind_me_here,
-           sizeof(struct sockaddr_in)) < 0)
-  {
-    printf("Bind na UDP nie powiodl sie.\n");
-    return 1;
-  }
+        int i = 0;
+        char liczba_bajtow_str[BUFF_SIZE];
+        for(i;i<liczba_bajtow;i++){
+            if(bufor[i]!=' '){
+                liczba_bajtow_str[i]=bufor[i];
+            }
+            else{
+                break;
+            }
+        }
+        printf("elo\n");
+        rozmiar_pliku=atoi(liczba_bajtow_str);
+        i=i+1;
+        int j=0;
+        for(i;i<liczba_bajtow;i++){
+            nazwa_pliku[j]=bufor[i];
+            j++;
+    
+        }
+        printf("%d %s\n", rozmiar_pliku, nazwa_pliku);
 
-  listen(gt, 10);
-  
-  ObsluzObaProtokoly(gt, gu, &bind_me_here);
-  
-  return 0;
+        // while(odebrane<rozmiar_pliku){
+        //     odebrane+=recv(gniazdo2,|bufor|,BUFF_SIZE,0);
+        // }
+        //rozmiar
+        // memset(bufor, 0, BUFF_SIZE);
+        // recv(gniazdo2, bufor, BUFF_SIZE, 0);
+        // printf("Wiadomosc od %s: %s\n",
+        //        inet_ntoa(nadawca.sin_addr),
+        //        bufor);
+        //send(gniazdo2,bufor,strlen(bufor),0);
+        close(gniazdo2);
+    }
+    close(gniazdo);
+    return 0;
 }
