@@ -9,7 +9,7 @@
 //nanananannananannndasndbuajn
 char buf[512];
 
-int main(int argc, char **argv)
+int client(int argc, char **argv)
 {
     struct sockaddr_in adr;
     int gniazdo, r;

@@ -81,7 +81,7 @@ void ObsluzObaProtokoly(int gniazdoTCP, int gniazdoUDP,
   }
 }
 
-int main(void)
+int server(void)
 {
   struct sockaddr_in bind_me_here;
   int gt, gu, port;
