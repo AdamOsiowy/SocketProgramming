@@ -15,7 +15,7 @@ int main(void)
 
     char bufor[BUFF_SIZE],nazwa_pliku[BUFF_SIZE];
     char liczba_bajtow_str[BUFF_SIZE];
-    int rozmiar_pliku, liczba_bajtow,i,j;
+    unsigned int rozmiar_pliku, liczba_bajtow,i,j;
     int gniazdo, gniazdo2,odebrane,bajty_odebrane_lacznie,odebrane_bajty;
     FILE *wskaznik_na_plik;
     struct sockaddr_in adr, nadawca;
@@ -48,8 +48,8 @@ int main(void)
         memset(bufor, 0, BUFF_SIZE);
 
         liczba_bajtow=recv(gniazdo2, bufor, BUFF_SIZE, 0);
-        //printf("Wiadomosc: %s\n",bufor);
-        //printf("Liczba bajtow: %d\n",liczba_bajtow);
+        printf("Wiadomosc: %s\n",bufor);
+        printf("Liczba bajtow: %d\n",liczba_bajtow);
 
         i=0;
         for(i;i<liczba_bajtow;i++){
@@ -65,10 +65,14 @@ int main(void)
         printf("Rozmiar pliku: %d\n",rozmiar_pliku);
         i=i+1;
         j=0;
+        /*
         for(i;i<liczba_bajtow;i++){
             nazwa_pliku[j]=bufor[i];
             j++;
         }
+        */
+        printf("Podaj nazwe pliku, ktora ma zostac zapisana: ");
+        scanf("%s", nazwa_pliku);
 
         //tworzenie pliku jesli nie istnieje, w trybie append and reading binarnie
         wskaznik_na_plik = fopen(nazwa_pliku,"ab+");
